@@ -29,9 +29,9 @@ const Charts = (() => {
     register(new Chart(el,{
       type:"doughnut",
       data:{
-        labels:["调频里程收益","容量补偿收益","其他收益"],
+        labels:["调频里程收益","容量补偿收益","量价补偿 C_es"],
         datasets:[{
-          data:[r.mileageRevenue, r.capRevenue, Math.max(0,r.perfBonus)],
+          data:[r.R_mileage, r.R_cap, Math.max(0,r.R_ces)],
           backgroundColor:[COLORS.blue, COLORS.green, COLORS.orange],
           borderWidth:0, cutout:"70%",
         }],
@@ -65,8 +65,8 @@ const Charts = (() => {
         labels,
         datasets:[
           { type:"bar", label:"现金流入", data:[0, ...r.yearly.map(y=>y.revenue)], backgroundColor:COLORS.blue, borderRadius:3 },
-          { type:"bar", label:"现金流出", data:[-r.totalCapex, ...r.yearly.map(y=>-(y.opex+y.tax))], backgroundColor:COLORS.orange, borderRadius:3 },
-          { type:"line", label:"净现金流", data:[-r.totalCapex, ...r.yearly.map(y=>y.cumulative)], borderColor:COLORS.red, backgroundColor:"transparent", tension:.3, pointRadius:2 },
+          { type:"bar", label:"现金流出", data:[-r.total_capex, ...r.yearly.map(y=>-(y.opex+y.tax))], backgroundColor:COLORS.orange, borderRadius:3 },
+          { type:"line", label:"净现金流", data:[-r.total_capex, ...r.yearly.map(y=>y.cumulative)], borderColor:COLORS.red, backgroundColor:"transparent", tension:.3, pointRadius:2 },
         ],
       },
       options:baseOpts,
@@ -81,8 +81,8 @@ const Charts = (() => {
       data:{
         labels:r.periods.map(p=>p.name),
         datasets:[
-          { label:"里程收益", data:r.periods.map(p=>p.revenue), backgroundColor:COLORS.blue, borderRadius:4 },
-          { label:"容量补偿", data:r.periods.map(p=>p.capRevenue), backgroundColor:COLORS.green, borderRadius:4 },
+          { label:"里程收益", data:r.periods.map(p=>p.mileage_revenue), backgroundColor:COLORS.blue, borderRadius:4 },
+          { label:"容量补偿", data:r.periods.map(p=>p.cap_revenue), backgroundColor:COLORS.green, borderRadius:4 },
         ],
       },
       options:baseOpts,
@@ -96,8 +96,8 @@ const Charts = (() => {
     const rev=[], mil=[];
     for(let i=0;i<30;i++){
       const f = 0.85 + 0.3 * Math.sin(i/5) * Math.cos(i/11);
-      rev.push(r.revIncTax/365 * (1 + f*0.3));
-      mil.push(r.mileageYearWkwh/365 * (1 + f*0.3));
+      rev.push(r.rev_incl_tax/365 * (1 + f*0.3));
+      mil.push(r.mileage_year_Wkwh/365 * (1 + f*0.3));
     }
     register(new Chart(el,{
       data:{ labels, datasets:[
@@ -133,15 +133,17 @@ const Charts = (() => {
     // 热力表
     const mapDiv = document.getElementById("heatmap");
     if(mapDiv){
-      const xs = [0.008,0.010,0.012,0.014,0.016];       // 里程价格
-      const ys = [300,400,500,600,700];                 // 日均里程
-      const irrBase = r.irr, priceBase=r.inputs.mileage_price, milBase=r.inputs.mileage_mw;
-      let html = `<table class="data"><thead><tr><th>日均里程↓ / 里程价格→</th>${xs.map(x=>`<th class='num'>${x.toFixed(3)}</th>`).join("")}</tr></thead><tbody>`;
-      ys.forEach(y=>{
-        html += `<tr><td>${y} MW</td>`;
-        xs.forEach(x=>{
+      const irrBase = r.irr;
+      const xs_bid = [0.008,0.010,0.012,0.014,0.015];                 // 里程申报价×K_settle (元/kWh)
+      const ys_mile = [0.4,0.5,0.6,0.7,0.8];                          // 里程倍数
+      const priceBase = r.periods[3].bid;
+      const milBase = r.inputs.mileage_multiplier;
+      let html = `<table class="data"><thead><tr><th>里程倍数↓ / 午间申报价→</th>${xs_bid.map(x=>`<th class='num'>${x.toFixed(3)}</th>`).join("")}</tr></thead><tbody>`;
+      ys_mile.forEach(y=>{
+        html += `<tr><td>${y.toFixed(2)} m</td>`;
+        xs_bid.forEach(x=>{
           const scale = (x/priceBase)*(y/milBase);
-          const irrCell = irrBase * (0.2 + 0.8*scale);     // 粗略估计
+          const irrCell = irrBase * (0.2 + 0.8*scale);
           const pctv = irrCell*100;
           const bg = pctv>=18?"#10b981":pctv>=14?"#34d399":pctv>=10?"#fde68a":pctv>=6?"#fca5a5":"#f87171";
           html += `<td class="num" style="background:${bg};color:${pctv>=10?'#0f172a':'#fff'}">${pctv.toFixed(1)}%</td>`;
@@ -196,7 +198,7 @@ const Charts = (() => {
       type:"bar",
       data:{ labels:SX_DATA.months, datasets:[{
         label:"调频里程电量（万kWh）",
-        data:SX_DATA.monthFactor.map(f=>r.mileageYearWkwh*f/12),
+        data:SX_DATA.monthFactor.map(f=>r.mileage_year_Wkwh*f/SX_DATA.monthFactor.reduce((a,b)=>a+b,0)),
         backgroundColor:COLORS.cyan, borderRadius:4,
       }]},
       options:baseOpts,
@@ -207,7 +209,7 @@ const Charts = (() => {
     const el = document.getElementById("chart-payback");
     if(!el) return;
     const labels = ["建设期", ...r.yearly.map(y=>`Y${y.year}`)];
-    const cum = [-r.totalCapex, ...r.yearly.map(y=>y.cumulative)];
+    const cum = [-r.total_capex, ...r.yearly.map(y=>y.cumulative)];
     register(new Chart(el,{
       type:"line",
       data:{ labels, datasets:[{

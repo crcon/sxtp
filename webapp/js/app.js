@@ -20,6 +20,7 @@
     prices:     { title:"电价与补偿标准",      sub:"山西二次调频市场公开价格与补偿规则" },
     devices:    { title:"设备参数",            sub:"储能系统技术参数与 CAPEX 构成" },
     policy:     { title:"政策与计算方法",      sub:"政策框架、出清与结算机制、计算模型" },
+    checks:     { title:"勾稽关系校验",        sub:"全平台输入→输出的双向验证与公式一致性" },
   };
 
   function render(view){
@@ -49,8 +50,9 @@
       case "performance": html = Views.perfView(r); break;
       case "mileage":     html = Views.mileageView(r); break;
       case "payback":     html = Views.payback(r); break;
-      case "prices":      html = Views.prices(); break;
+      case "prices":      html = Views.prices(r); break;
       case "devices":     html = Views.devices(r); break;
+      case "checks":      html = Views.checksView(r); break;
       case "policy":
       case "params":
       case "calc":        html = Views.policy(); break;
@@ -79,23 +81,41 @@
   function recalc(){
     const p = Calculator.readInputs();
     state.result = Calculator.run(p);
+    updateMiniIndicators(state.result);
     render(state.view);
   }
 
+  function updateMiniIndicators(r){
+    const setText = (id,v)=>{ const el=document.getElementById(id); if(el) el.textContent = v; };
+    setText("v_K_real",   r.K_real.toFixed(3));
+    setText("v_K_settle", r.K_settle.toFixed(3));
+    const mini = document.getElementById("checkMini");
+    if(mini){
+      const ok = r.checks.filter(c=>c.ok).length, total = r.checks.length;
+      mini.textContent = `勾稽 ${ok}/${total} 通过`;
+      mini.classList.toggle("ok",  ok===total);
+      mini.classList.toggle("fail", ok<total);
+    }
+  }
+
   function resetInputs(){
-    const D = DEFAULT_PARAMS;
-    const set = (id,v)=>{ const el=document.getElementById(id); if(el) el.value = v; };
-    set("p_energy",D.energy); set("p_duration",D.duration); set("p_power",D.power);
-    set("p_mileage_price",D.mileage_price); set("p_perf_max",D.perf_max); set("p_cap_subsidy",D.cap_subsidy);
-    set("p_calls",D.calls); set("p_mileage_mw",D.mileage_mw); set("p_k",D.k);
-    set("p_capex_equip",D.capex_equip); set("p_capex_epc",D.capex_epc); set("p_opex",D.opex);
-    set("p_eff",D.eff); set("p_degrade",D.degrade);
-    set("p_discount",D.discount); set("p_vat",D.vat); set("p_tax",D.tax); set("p_life",D.life); set("p_build",D.build);
+    Object.entries(DEFAULT_PARAMS).forEach(([k,v])=>{
+      const el = document.getElementById("p_"+k);
+      if(el) el.value = v;
+    });
     recalc();
   }
 
   function exportReport(){
     const r = state.result; if(!r) return;
+    const periodRows = r.periods.map(pd => [
+      `【时段】${pd.name} ${pd.type}`,
+      `申报价=${pd.bid}元/kWh, 中标容量比=${(pd.q*100).toFixed(1)}%, 里程电量=${pd.mileage_Wkwh.toFixed(2)}万kWh, 里程收益=${pd.mileage_revenue.toFixed(2)}万元`
+    ]);
+    const checkRows = r.checks.map(c => [
+      `【勾稽】${c.name}`,
+      `${c.ok?"✓":"✗"}  左=${typeof c.left==="number"?c.left.toFixed(4):c.left}, 右=${typeof c.right==="number"?c.right.toFixed(4):c.right} ${c.unit||""}`
+    ]);
     const rows = [
       ["山西独立储能二次调频收益测算报告",""],
       ["生成时间", new Date().toLocaleString("zh-CN")],
@@ -104,20 +124,35 @@
       ["储能容量（MWh）", r.inputs.energy],
       ["额定功率（MW）", r.inputs.power],
       ["储能时长（h）", r.inputs.duration],
+      ["充放电效率 η", r.inputs.eff],
+      ["K_real (K1·K2·K3)", r.K_real.toFixed(3)],
+      ["K_settle (β·λ·K_real)", r.K_settle.toFixed(3)],
+      ["",""],
+      ["【5时段明细】",""],
+      ...periodRows,
+      ["",""],
       ["【收益结果】",""],
-      ["年收益含税（万元）", r.revIncTax.toFixed(2)],
-      ["年收益税后（万元）", r.revTax.toFixed(2)],
-      ["调频里程收益（万元）", r.mileageRevenue.toFixed(2)],
-      ["容量补偿收益（万元）", r.capRevenue.toFixed(2)],
-      ["年调频里程电量（万kWh）", r.mileageYearWkwh.toFixed(2)],
+      ["年收益含税（万元）", r.rev_incl_tax.toFixed(2)],
+      ["年收益不含税（万元）", r.rev_excl_tax.toFixed(2)],
+      ["里程收益 R_mileage（万元）", r.R_mileage.toFixed(2)],
+      ["容量补偿 R_cap（万元）", r.R_cap.toFixed(2)],
+      ["量价补偿 C_es（万元）", r.R_ces.toFixed(2)],
+      ["考核扣款（万元）", r.penalty.toFixed(2)],
+      ["年调频里程电量（万kWh）", r.mileage_year_Wkwh.toFixed(2)],
+      ["",""],
       ["【财务指标】",""],
-      ["总投资（万元）", r.totalCapex.toFixed(2)],
+      ["总投资（万元）", r.total_capex.toFixed(2)],
+      ["单位 CAPEX（元/Wh）", r.capex_per_wh.toFixed(2)],
+      ["年运维成本（万元）", r.opex_year.toFixed(2)],
       ["投资回收期（年）", r.payback? r.payback.toFixed(2):"—"],
       ["IRR（%）", (r.irr*100).toFixed(2)],
       ["NPV（万元）", r.npv.toFixed(2)],
       ["LCOE（元/kWh）", r.lcoe.toFixed(3)],
+      ["",""],
+      ["【勾稽关系校验】",""],
+      ...checkRows,
     ];
-    const csv = "\ufeff" + rows.map(x=>x.join(",")).join("\n");
+    const csv = "\ufeff" + rows.map(x=>x.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
     const blob = new Blob([csv],{type:"text/csv;charset=utf-8"});
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -143,6 +178,20 @@
     let timer;
     document.querySelectorAll(".panel input, .panel select").forEach(el=>{
       el.addEventListener("input", ()=>{ clearTimeout(timer); timer = setTimeout(recalc, 400); });
+    });
+
+    // 面板可折叠
+    document.querySelectorAll(".expandable").forEach(h=>{
+      h.style.cursor = "pointer";
+      h.addEventListener("click", ()=>{
+        const targetId = h.dataset.target;
+        const tgt = targetId && document.getElementById(targetId);
+        if(!tgt) return;
+        const open = tgt.style.display !== "none";
+        tgt.style.display = open ? "none" : "";
+        const arrow = h.querySelector(".arrow");
+        if(arrow) arrow.textContent = open ? "▸" : "▾";
+      });
     });
 
     recalc();

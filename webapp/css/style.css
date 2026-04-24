@@ -257,6 +257,50 @@ table.data tr.total td{font-weight:700;background:var(--surface-2);}
 }
 [data-theme="dark"] .policy-article .note{background:#2a1e10;border-color:#7c3f1a;color:#fdba74;}
 
+/* ============ 可折叠小节 / 提示 / mini 表 ============ */
+.expandable{cursor:pointer;user-select:none;}
+.expandable:hover{color:var(--primary);}
+.hint{font-size:11px;color:var(--text-3);margin:4px 0 6px;padding-left:4px;}
+.hint b{color:var(--primary);font-weight:600;}
+.mini-table{width:100%;border-collapse:collapse;font-size:11.5px;margin-top:4px;}
+.mini-table th{
+  padding:4px 2px;text-align:left;color:var(--text-2);font-weight:600;
+  border-bottom:1px solid var(--border);
+}
+.mini-table td{padding:3px 2px;border-bottom:1px dashed var(--border);}
+.mini-table td:first-child{color:var(--text-2);font-size:11px;width:44px;}
+.mini-table input{
+  width:100%;padding:3px 5px;border:1px solid var(--border);border-radius:4px;
+  background:var(--surface-2);font-size:11.5px;color:var(--text);
+}
+
+.check-mini{
+  margin-top:10px;padding:8px 10px;border-radius:6px;
+  background:var(--surface-2);font-size:11.5px;color:var(--text-2);
+  display:flex;align-items:center;gap:6px;
+}
+.check-mini.ok{background:#ecfdf5;color:#047857;}
+.check-mini.fail{background:#fef2f2;color:#b91c1c;}
+[data-theme="dark"] .check-mini.ok{background:#052e22;color:#34d399;}
+[data-theme="dark"] .check-mini.fail{background:#3a1414;color:#fca5a5;}
+
+/* ============ 校验表 ============ */
+.check-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.check-table th,.check-table td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;}
+.check-table th{background:var(--surface-2);font-weight:600;color:var(--text-2);font-size:12px;}
+.check-table td.num{text-align:right;font-variant-numeric:tabular-nums;}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;}
+.badge.ok{background:#ecfdf5;color:#047857;}
+.badge.fail{background:#fef2f2;color:#b91c1c;}
+.badge.warn{background:#fffbeb;color:#b45309;}
+[data-theme="dark"] .badge.ok{background:#052e22;color:#34d399;}
+[data-theme="dark"] .badge.fail{background:#3a1414;color:#fca5a5;}
+
+code.f{
+  font-family:"SFMono-Regular",Consolas,monospace;font-size:11.5px;
+  background:var(--surface-2);padding:1px 6px;border-radius:4px;color:var(--primary);
+}
+
 /* ============ 响应式 ============ */
 @media (max-width:1280px){
   .kpis{grid-template-columns:repeat(3,1fr);}

@@ -44,7 +44,8 @@
         <a class="nav-item" data-view="sensitivity"><span>·</span>敏感性分析</a>
       </div>
       <div class="nav-group">
-        <div class="nav-title">基础数据</div>
+        <div class="nav-title">校验与数据</div>
+        <a class="nav-item" data-view="checks"><span>·</span>勾稽关系校验</a>
         <a class="nav-item" data-view="prices"><span>·</span>电价与补偿标准</a>
         <a class="nav-item" data-view="devices"><span>·</span>设备参数</a>
         <a class="nav-item" data-view="policy"><span>·</span>政策与方法</a>
@@ -82,50 +83,112 @@
           <button class="btn-reset" id="btnReset" title="重置">↻ 重置</button>
         </div>
 
+        <!-- ========= 项目基本 ========= -->
         <div class="panel-section">
-          <div class="panel-sub">▾ 项目基本参数</div>
-          <div class="field"><label>储能容量</label><div class="input-unit"><input id="p_energy" type="number" value="200"><span>MWh</span></div></div>
-          <div class="field"><label>储能时长</label><div class="input-unit"><input id="p_duration" type="number" value="2"><span>h</span></div></div>
-          <div class="field"><label>额定功率</label><div class="input-unit"><input id="p_power" type="number" value="100"><span>MW</span></div></div>
-          <div class="field"><label>电池类型</label>
-            <select id="p_battery">
-              <option>磷酸铁锂</option><option>三元锂</option><option>钠离子</option>
-            </select>
+          <div class="panel-sub expandable on" data-target="sec-basic">▾ 项目基本参数</div>
+          <div id="sec-basic">
+            <div class="field"><label>储能容量</label><div class="input-unit"><input id="p_energy" type="number" value="200"><span>MWh</span></div></div>
+            <div class="field"><label>储能时长</label><div class="input-unit"><input id="p_duration" type="number" value="2"><span>h</span></div></div>
+            <div class="field"><label>额定功率</label><div class="input-unit"><input id="p_power" type="number" value="100"><span>MW</span></div></div>
+            <div class="field"><label>电池类型</label>
+              <select id="p_battery"><option>磷酸铁锂</option><option>三元锂</option><option>钠离子</option></select>
+            </div>
+            <div class="field"><label>项目地点</label>
+              <select id="p_region"><option>山西省</option></select>
+            </div>
+            <div class="field"><label>SOC 下限</label><div class="input-unit"><input id="p_soc_min" type="number" value="10"><span>%</span></div></div>
+            <div class="field"><label>SOC 上限</label><div class="input-unit"><input id="p_soc_max" type="number" value="90"><span>%</span></div></div>
+            <div class="field"><label>充放电效率</label><div class="input-unit"><input id="p_eff" type="number" step="0.01" value="0.88"><span></span></div></div>
+            <div class="field"><label>年衰减率</label><div class="input-unit"><input id="p_degrade" type="number" step="0.001" value="0.020"><span>/年</span></div></div>
           </div>
-          <div class="field"><label>项目地点</label>
-            <select id="p_region"><option>山西省</option></select>
+        </div>
+
+        <!-- ========= 性能系数（Kp） ========= -->
+        <div class="panel-section">
+          <div class="panel-sub expandable on" data-target="sec-perf">▾ 性能系数（Kp ≤ 2）</div>
+          <div id="sec-perf">
+            <div class="field"><label title="调节速率">K1 速率</label><div class="input-unit"><input id="p_K1" type="number" step="0.01" value="1.65"><span></span></div></div>
+            <div class="field"><label title="调节精度">K2 精度</label><div class="input-unit"><input id="p_K2" type="number" step="0.01" value="0.98"><span></span></div></div>
+            <div class="field"><label title="响应时间">K3 响应</label><div class="input-unit"><input id="p_K3" type="number" step="0.01" value="0.99"><span></span></div></div>
+            <div class="field"><label>时段最大K</label><div class="input-unit"><input id="p_K_max_period" type="number" step="0.01" value="1.80"><span></span></div></div>
+            <div class="hint">当前 Kp = <b id="v_K_real">—</b>；K结算 = <b id="v_K_settle">—</b></div>
           </div>
         </div>
 
+        <!-- ========= 5 时段申报 ========= -->
         <div class="panel-section">
-          <div class="panel-sub">市场与收益参数</div>
-          <div class="field"><label>里程价格</label><div class="input-unit"><input id="p_mileage_price" type="number" step="0.001" value="0.012"><span>元/kWh</span></div></div>
-          <div class="field"><label>性能补偿上限</label><div class="input-unit"><input id="p_perf_max" type="number" step="0.001" value="0.015"><span>元/kWh</span></div></div>
-          <div class="field"><label>容量补偿</label><div class="input-unit"><input id="p_cap_subsidy" type="number" value="12"><span>元/kW·月</span></div></div>
-          <div class="field"><label>年调用次数</label><div class="input-unit"><input id="p_calls" type="number" value="365"><span>次/年</span></div></div>
-          <div class="field"><label>日平均调频里程</label><div class="input-unit"><input id="p_mileage_mw" type="number" step="0.1" value="500"><span>MW(当量)</span></div></div>
-          <div class="field"><label>综合性能系数K</label><div class="input-unit"><input id="p_k" type="number" step="0.01" value="1.80"><span></span></div></div>
+          <div class="panel-sub expandable on" data-target="sec-bid">▾ 5时段申报（元/kWh · 中标比）</div>
+          <div id="sec-bid">
+            <table class="mini-table">
+              <thead><tr><th>时段</th><th>申报价</th><th>中标比</th></tr></thead>
+              <tbody>
+                <tr><td>00-06</td><td><input id="p_bid_t1" type="number" step="0.001" value="0.008"></td><td><input id="p_q_t1" type="number" step="0.01" value="0.10"></td></tr>
+                <tr><td>06-12</td><td><input id="p_bid_t2" type="number" step="0.001" value="0.010"></td><td><input id="p_q_t2" type="number" step="0.01" value="0.12"></td></tr>
+                <tr><td>12-16</td><td><input id="p_bid_t3" type="number" step="0.001" value="0.012"></td><td><input id="p_q_t3" type="number" step="0.01" value="0.13"></td></tr>
+                <tr><td>16-21</td><td><input id="p_bid_t4" type="number" step="0.001" value="0.014"></td><td><input id="p_q_t4" type="number" step="0.01" value="0.15"></td></tr>
+                <tr><td>21-24</td><td><input id="p_bid_t5" type="number" step="0.001" value="0.010"></td><td><input id="p_q_t5" type="number" step="0.01" value="0.10"></td></tr>
+              </tbody>
+            </table>
+            <div class="hint">政策上限 0.015 元/kWh；区间自动校验</div>
+          </div>
         </div>
 
+        <!-- ========= 里程与补偿 ========= -->
         <div class="panel-section">
-          <div class="panel-sub">成本参数</div>
-          <div class="field"><label>设备投资</label><div class="input-unit"><input id="p_capex_equip" type="number" step="0.01" value="0.90"><span>元/Wh</span></div></div>
-          <div class="field"><label>EPC费用</label><div class="input-unit"><input id="p_capex_epc" type="number" step="0.01" value="0.20"><span>元/Wh</span></div></div>
-          <div class="field"><label>年运维成本</label><div class="input-unit"><input id="p_opex" type="number" value="18"><span>元/kW·年</span></div></div>
-          <div class="field"><label>充放电效率</label><div class="input-unit"><input id="p_eff" type="number" step="0.01" value="0.88"><span></span></div></div>
-          <div class="field"><label>电芯衰减率</label><div class="input-unit"><input id="p_degrade" type="number" step="0.001" value="0.020"><span>/年</span></div></div>
+          <div class="panel-sub expandable on" data-target="sec-mile">▾ 里程与量价补偿</div>
+          <div id="sec-mile">
+            <div class="field"><label>里程倍数 m</label><div class="input-unit"><input id="p_mileage_multiplier" type="number" step="0.01" value="0.60"><span>MW·h/MW·h</span></div></div>
+            <div class="field"><label>充电电价</label><div class="input-unit"><input id="p_p_charge" type="number" step="0.01" value="0.35"><span>元/kWh</span></div></div>
+            <div class="field"><label>放电电价</label><div class="input-unit"><input id="p_p_discharge" type="number" step="0.01" value="0.40"><span>元/kWh</span></div></div>
+            <div class="field"><label>日循环次数</label><div class="input-unit"><input id="p_cycles_per_day" type="number" step="0.1" value="1.2"><span>次/日</span></div></div>
+            <div class="field"><label>DoD 占比</label><div class="input-unit"><input id="p_dod_ratio" type="number" step="0.05" value="0.60"><span></span></div></div>
+          </div>
         </div>
 
+        <!-- ========= 容量补偿 ========= -->
         <div class="panel-section">
-          <div class="panel-sub">财务参数</div>
-          <div class="field"><label>折现率</label><div class="input-unit"><input id="p_discount" type="number" step="0.01" value="8.00"><span>%</span></div></div>
-          <div class="field"><label>增值税率</label><div class="input-unit"><input id="p_vat" type="number" value="13"><span>%</span></div></div>
-          <div class="field"><label>所得税率</label><div class="input-unit"><input id="p_tax" type="number" value="25"><span>%</span></div></div>
-          <div class="field"><label>项目周期</label><div class="input-unit"><input id="p_life" type="number" value="15"><span>年</span></div></div>
-          <div class="field"><label>建设期</label><div class="input-unit"><input id="p_build" type="number" value="6"><span>月</span></div></div>
+          <div class="panel-sub expandable on" data-target="sec-cap">▾ 容量补偿（扩展口径）</div>
+          <div id="sec-cap">
+            <div class="field"><label>容量单价</label><div class="input-unit"><input id="p_cap_subsidy" type="number" value="12"><span>元/kW·月</span></div></div>
+            <div class="field"><label>覆盖比例</label><div class="input-unit"><input id="p_q_cap_cover" type="number" step="0.05" value="0.80"><span></span></div></div>
+          </div>
+        </div>
+
+        <!-- ========= 考核 ========= -->
+        <div class="panel-section">
+          <div class="panel-sub expandable" data-target="sec-kpi">▸ 考核指标</div>
+          <div id="sec-kpi" style="display:none">
+            <div class="field"><label>可用率</label><div class="input-unit"><input id="p_availability" type="number" step="0.001" value="0.9865"><span></span></div></div>
+            <div class="field"><label>合格率</label><div class="input-unit"><input id="p_qualified_rate" type="number" step="0.001" value="0.9823"><span></span></div></div>
+            <div class="field"><label>响应达标</label><div class="input-unit"><input id="p_response_rate" type="number" step="0.001" value="0.9941"><span></span></div></div>
+            <div class="field"><label>考核扣款率</label><div class="input-unit"><input id="p_penalty_rate" type="number" step="0.01" value="0.10"><span></span></div></div>
+          </div>
+        </div>
+
+        <!-- ========= 成本 ========= -->
+        <div class="panel-section">
+          <div class="panel-sub expandable" data-target="sec-cost">▸ 成本参数</div>
+          <div id="sec-cost" style="display:none">
+            <div class="field"><label>设备投资</label><div class="input-unit"><input id="p_capex_equip" type="number" step="0.01" value="0.90"><span>元/Wh</span></div></div>
+            <div class="field"><label>EPC 费用</label><div class="input-unit"><input id="p_capex_epc" type="number" step="0.01" value="0.20"><span>元/Wh</span></div></div>
+            <div class="field"><label>年运维</label><div class="input-unit"><input id="p_opex" type="number" value="18"><span>元/kW·年</span></div></div>
+          </div>
+        </div>
+
+        <!-- ========= 财务 ========= -->
+        <div class="panel-section">
+          <div class="panel-sub expandable" data-target="sec-fin">▸ 财务参数</div>
+          <div id="sec-fin" style="display:none">
+            <div class="field"><label>折现率</label><div class="input-unit"><input id="p_discount" type="number" step="0.01" value="8.00"><span>%</span></div></div>
+            <div class="field"><label>增值税率</label><div class="input-unit"><input id="p_vat" type="number" value="13"><span>%</span></div></div>
+            <div class="field"><label>所得税率</label><div class="input-unit"><input id="p_tax" type="number" value="25"><span>%</span></div></div>
+            <div class="field"><label>项目周期</label><div class="input-unit"><input id="p_life" type="number" value="15"><span>年</span></div></div>
+            <div class="field"><label>建设期</label><div class="input-unit"><input id="p_build" type="number" value="6"><span>月</span></div></div>
+          </div>
         </div>
 
         <button class="btn primary full" id="btnCalc">⟳ 重新计算</button>
+        <div class="check-mini" id="checkMini"></div>
       </aside>
     </div>
   </main>
